@@ -1,47 +1,37 @@
 <?php
-        // Create connection
-        $conn = new mysqli("localhost", "root", "", "latihan");
-        // Check connection
-        if ($conn->connect_error) {
-            die("Connection failed: " . $conn->connect_error);
-        }
- // Check if delete action is triggered
-    if (isset($_GET['delete_id'])) {
-    $delete_id = $_GET['delete_id'];
-    $delete_sql = "DELETE FROM penduduk WHERE id = $delete_id";
-    if ($conn->query($delete_sql) === TRUE) {
-        echo "Record deleted.";
-    } else {
-        echo "Warning: " . $conn->error;
-    }
+$conn = new mysqli("localhost", "root", "", "latihan");
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT * FROM penduduk";
-$result = $conn->query($sql);
-if ($result->num_rows > 0) {
-    echo "<table border='1px'><tr>
-    <th>ID</th>
-    <th>Kecamatan</th>
-    <th>Longitude</th>
-    <th>Latitude</th>
-    <th>Luas</th>
-    <th>Jumlah Penduduk</th>
-    <th>Aksi</th></tr>";
-    // output data of each row
-    while($row = $result->fetch_assoc()) {
-        echo "<tr>
-        <td>".$row["id"]."</td>
-        <td>".$row["kecamatan"]."</td>
-        <td>".$row["longitude"]."</td>
-        <td>".$row["latitude"]."</td>
-        <td>".$row["luas"]."</td>
-        <td align='right'>".$row["jumlah_penduduk"]."</td>
-        <td><a href='?delete_id=".$row["id"]."' onclick='return confirm(\"Apakah yakin menghapus data?\");'>Delete</a></td>
-        </tr>";
+// Check if there is an ID provided
+if (isset($_GET['id'])) {
+    $id = (int)$_GET['id']; // Ensure the ID is an integer
+
+    // Prepare a statement to delete the record
+    $delete_sql = "DELETE FROM penduduk WHERE id=?";
+    $delete_stmt = $conn->prepare($delete_sql);
+    if ($delete_stmt === false) {
+        die("Prepare failed: " . $conn->error);
     }
-    echo "</table>";
+    
+    $delete_stmt->bind_param("i", $id);
+
+    // Execute the deletion
+    if ($delete_stmt->execute()) {
+        if ($delete_stmt->affected_rows > 0) {
+            echo "<script>alert('Data berhasil dihapus'); window.location.href = 'index.php';</script>";
+        } else {
+            echo "<script>alert('Gagal menghapus data: Tidak ada baris yang dihapus.'); window.location.href = 'index.php';</script>";
+        }
+    } else {
+        echo "<script>alert('Gagal menghapus data: " . $conn->error . "'); window.location.href = 'index.php';</script>";
+    }
+
+    $delete_stmt->close();
 } else {
-    echo "0 results";
+    echo "<script>alert('ID tidak diterima'); window.location.href = 'index.php';</script>";
 }
 
 $conn->close();
+?>
